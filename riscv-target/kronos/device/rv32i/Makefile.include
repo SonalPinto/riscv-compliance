@@ -1,0 +1,26 @@
+ifndef TARGET_SIM
+    $(error TARGET_SIM is undefined)
+endif
+
+KRONOS      = $(ROOTDIR)/riscv-target/kronos/device/rv32i
+LDSCRIPT    = $(KRONOS)/link.ld
+DEFINES     = -DPRIV_MISA_S=0 -DPRIV_MISA_U=0
+
+RUN_TARGET  = ${TARGET_SIM} $*.bin $*.signature.output;
+
+RISCV_PREFIX   ?= riscv32-unknown-elf-
+RISCV_GCC      ?= $(RISCV_PREFIX)gcc
+RISCV_OBJDUMP  ?= $(RISCV_PREFIX)objdump
+RISCV_OBJCOPY  ?= $(RISCV_PREFIX)objcopy
+RISCV_NM       ?= $(RISCV_PREFIX)nm
+RISCV_GCC_OPTS ?= -static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles
+
+COMPILE_TARGET=\
+    $$(RISCV_GCC) $$(RISCV_GCC_OPTS) \
+        -I$(ROOTDIR)/riscv-test-env/ \
+        -I$(ROOTDIR)/riscv-test-env/p/ \
+        -I$(TARGETDIR)/$(RISCV_TARGET)/ \
+        $(DEFINES) -T$(LDSCRIPT) $$< -o $$@; \
+        $$(RISCV_OBJDUMP) -D $$@ > $$(basename $$@).objdump; \
+        $$(RISCV_NM) -a $$@ > $$(basename $$@).nm; \
+        $$(RISCV_OBJCOPY) -O binary $$@ $$(basename $$@).bin;
